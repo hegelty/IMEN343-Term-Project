@@ -94,11 +94,20 @@ docker exec -it imenhfe-eyewear-dev bash
 ```
 
 실제 Method B fitting은 Linux/CUDA용 Dockerfile을 쓰는 것이 안전합니다.
+이 이미지는 PyTorch 2.1 / CUDA 11.8 / PyTorch3D 0.7.5 wheel을 사용하고,
+upstream 호환성을 위해 `numpy<2`, `opencv-python<4.13`, `chumpy`를 고정합니다.
 
 ```bash
 docker build -f Dockerfile.photometric -t imenhfe-eyewear:method-b .
 docker run --gpus all --rm -v "$PWD:/workspace" -w /workspace imenhfe-eyewear:method-b \
   python -m eyewear.cli run photometric --input data/sample_me.jpg --subject-id sample_me --photometric-device cuda
+```
+
+GPU가 Docker에서 잡히지 않으면 CPU로도 실행할 수 있습니다. 느리지만 실제 upstream fitting은 수행됩니다.
+
+```bash
+docker run --rm -v "$PWD:/workspace" -w /workspace imenhfe-eyewear:method-b \
+  python -m eyewear.cli run photometric --input data/sample_me.jpg --subject-id sample_me --photometric-device cpu --photometric-timeout-sec 1800
 ```
 
 ## 한 번에 실행

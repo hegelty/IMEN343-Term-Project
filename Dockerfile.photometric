@@ -2,10 +2,11 @@
 #
 # This is intentionally separate from the lightweight project Dockerfile because
 # Method B depends on PyTorch3D and licensed FLAME assets. It is not TensorFlow.
-# The upstream README was tested with Python 3.8, PyTorch 1.5, CUDA 10.2, and
-# PyTorch3D 0.2; this file preserves that conda-based direction.
+# The upstream README used a legacy PyTorch 1.5/CUDA 10.2 stack, but those CUDA
+# images are no longer consistently available on Docker Hub. This image uses a
+# modern PyTorch base while keeping the upstream code isolated.
 
-FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
+FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-devel
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -25,23 +26,17 @@ RUN apt-get update \
         libxrender1 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-py38_23.11.0-2-Linux-x86_64.sh -o /tmp/miniconda.sh \
-    && bash /tmp/miniconda.sh -b -p /opt/conda \
-    && rm /tmp/miniconda.sh
-
 ENV PATH=/opt/conda/bin:$PATH
-
-RUN conda install -y -c pytorch pytorch=1.5.0 torchvision cudatoolkit=10.2 \
-    && conda install -y -c conda-forge -c fvcore fvcore \
-    && conda install -y -c pytorch3d pytorch3d=0.2.5 \
-    && conda clean -afy
 
 COPY pyproject.toml README.md requirements.txt requirements-photometric.txt ./
 COPY src ./src
 
 RUN python -m pip install --upgrade pip \
     && python -m pip install -r requirements.txt \
-    && python -m pip install opencv-python imageio scikit-image \
+    && python -m pip install "setuptools<70" wheel \
+    && python -m pip install --no-build-isolation chumpy \
+    && python -m pip install "numpy<2" "opencv-python<4.13" imageio scikit-image fvcore iopath \
+    && python -m pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu118_pyt210/download.html \
     && python -m pip install -e .
 
 CMD ["python", "-m", "eyewear.cli", "--help"]

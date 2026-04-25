@@ -93,11 +93,21 @@ docker exec -it imenhfe-eyewear-dev bash
 ```
 
 For real Method B fitting, prefer the Linux/CUDA-oriented Dockerfile:
+This image uses the PyTorch 2.1 / CUDA 11.8 / PyTorch3D 0.7.5 wheel and pins
+`numpy<2`, `opencv-python<4.13`, and `chumpy` for upstream compatibility.
 
 ```bash
 docker build -f Dockerfile.photometric -t imenhfe-eyewear:method-b .
 docker run --gpus all --rm -v "$PWD:/workspace" -w /workspace imenhfe-eyewear:method-b \
   python -m eyewear.cli run photometric --input data/sample_me.jpg --subject-id sample_me --photometric-device cuda
+```
+
+If Docker cannot access a GPU, CPU execution also works. It is slow, but it runs
+the real upstream fitting path.
+
+```bash
+docker run --rm -v "$PWD:/workspace" -w /workspace imenhfe-eyewear:method-b \
+  python -m eyewear.cli run photometric --input data/sample_me.jpg --subject-id sample_me --photometric-device cpu --photometric-timeout-sec 1800
 ```
 
 ## One-command Pipeline

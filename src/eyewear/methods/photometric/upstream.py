@@ -212,6 +212,29 @@ def prepare_upstream_input(upstream_dir: Path, input_info: InputInfo, subject_id
     )
 
 
+def _apply_runtime_compat_patches(upstream_dir: Path) -> list[str]:
+    """Apply tiny compatibility fixes needed by modern Docker dependencies."""
+    notes: list[str] = []
+    util_path = upstream_dir / "util.py"
+    if not util_path.exists():
+        return notes
+
+    text = util_path.read_text(encoding="utf-8")
+    patched = text
+    patched = patched.replace(
+        "        st = kpts[i, :2]\n",
+        "        st = tuple(np.rint(kpts[i, :2]).astype(np.int32).tolist())\n",
+    )
+    patched = patched.replace(
+        "        ed = kpts[i + 1, :2]\n",
+        "        ed = tuple(np.rint(kpts[i + 1, :2]).astype(np.int32).tolist())\n",
+    )
+    if patched != text:
+        util_path.write_text(patched, encoding="utf-8")
+        notes.append("Applied runtime compatibility patch: cast OpenCV landmark drawing coordinates to integer tuples.")
+    return notes
+
+
 def _tail(text: str, limit: int = 4000) -> str:
     return text[-limit:] if len(text) > limit else text
 
@@ -232,6 +255,7 @@ def run_upstream_fitting(
         )
 
     prepared = prepare_upstream_input(check.upstream_dir, input_info, subject_id)
+    compat_notes = _apply_runtime_compat_patches(check.upstream_dir)
     env = {
         **os.environ,
         "PYTHONPATH": os.pathsep.join([str(check.upstream_dir), str(check.upstream_dir / "models"), os.environ.get("PYTHONPATH", "")]),
@@ -251,7 +275,7 @@ def run_upstream_fitting(
         return UpstreamRunResult(
             success=False,
             status="upstream_timeout",
-            notes=[*check.notes, *prepared.notes, f"Upstream fitting exceeded timeout_sec={timeout_sec}."],
+            notes=[*check.notes, *prepared.notes, *compat_notes, f"Upstream fitting exceeded timeout_sec={timeout_sec}."],
             prepared_input=prepared,
             stdout_tail=_tail(exc.stdout or ""),
             stderr_tail=_tail(exc.stderr or ""),
@@ -263,7 +287,7 @@ def run_upstream_fitting(
         return UpstreamRunResult(
             success=False,
             status="upstream_failed",
-            notes=[*check.notes, *prepared.notes, f"Upstream command failed with returncode={result.returncode}."],
+            notes=[*check.notes, *prepared.notes, *compat_notes, f"Upstream command failed with returncode={result.returncode}."],
             prepared_input=prepared,
             stdout_tail=_tail(result.stdout),
             stderr_tail=_tail(result.stderr),
@@ -273,7 +297,7 @@ def run_upstream_fitting(
         return UpstreamRunResult(
             success=False,
             status="upstream_missing_outputs",
-            notes=[*check.notes, *prepared.notes, "Upstream finished but expected OBJ/NPY outputs were not found."],
+            notes=[*check.notes, *prepared.notes, *compat_notes, "Upstream finished but expected OBJ/NPY outputs were not found."],
             prepared_input=prepared,
             stdout_tail=_tail(result.stdout),
             stderr_tail=_tail(result.stderr),
@@ -282,7 +306,7 @@ def run_upstream_fitting(
     return UpstreamRunResult(
         success=True,
         status="upstream_success_scale_unverified",
-        notes=[*check.notes, *prepared.notes, "Upstream fitting completed; dense mesh absolute metric scale is still unverified."],
+        notes=[*check.notes, *prepared.notes, *compat_notes, "Upstream fitting completed; dense mesh absolute metric scale is still unverified."],
         prepared_input=prepared,
         mesh_path=mesh_path,
         params_path=params_path,

@@ -16,9 +16,15 @@
 - Fragile dependencies:
   - CUDA / PyTorch / PyTorch3D legacy package version coupling
   - Upstream README reports Python 3.8.3, PyTorch 1.5, CUDA 10.2, PyTorch3D 0.2
+  - `Dockerfile.photometric` uses a modern PyTorch 2.1 / CUDA 11.8 base with
+    PyTorch3D 0.7.5 prebuilt wheel because the original CUDA 10.2 image stack is
+    no longer reliably available
+  - `numpy<2`, `opencv-python<4.13`, and a non-isolated `chumpy` install are
+    pinned for PyTorch/FLAME compatibility
   - This is a PyTorch/PyTorch3D stack, not TensorFlow
-- Remaining blockers:
-  - Install compatible PyTorch/CUDA/PyTorch3D/OpenCV dependencies
+- Current caveats:
+  - The wrapper applies a tiny runtime compatibility patch that casts OpenCV
+    debug-landmark drawing coordinates to integer tuples before running upstream
   - Keep licensed FLAME assets local under paths allowed by the upstream license
   - Replace coarse staged landmarks/masks with real FAN landmarks and face segmentation masks
   - Map fitted mesh vertices/FLAME parameters into the existing canonical schema with a validated vertex/region map
