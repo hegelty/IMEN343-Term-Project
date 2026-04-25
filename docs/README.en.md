@@ -149,6 +149,13 @@ If MediaPipe is missing or detection fails, the pipeline emits
 `backend_status="template_proxy"` and `metric_ready=false`. That output is only
 for smoke testing, not real measurement.
 
+Method B runs post-hoc MediaPipe Iris calibration after successful upstream
+photometric fitting. In `calibration.json`, `status="validated"`,
+`scale_source="iris_posthoc_calibration"`, and `metric_ready=true` mean the
+eye/nose anchor residual passed the configured threshold. The current semantic
+mapping is still a mesh bounding-box proxy, so temple, forehead, and
+ear/back-of-ear values must remain proxy/estimated interpretations.
+
 ## FLAME Assets For Method B
 
 1. Create an account at https://flame.is.tue.mpg.de/.
@@ -224,9 +231,10 @@ outputs/{subject_id}/comparison/
 - RGB-only input cannot precisely recover back-of-ear geometry.
 - Temple/back-of-ear outputs are visible-ear proxies or estimated values.
 - Single portrait input is weak for side/head-breadth measurements.
-- Method B dense fitting remains blocked until upstream code and licensed FLAME
-  assets are installed.
-- Do not use proxy outputs for fabrication or mm-accuracy claims.
+- Method B dense fitting requires upstream code and licensed FLAME assets.
+- Method B `metric_ready=true` means the handoff unit is iris-calibrated mm; it
+  does not mean every FLAME vertex-to-anatomical landmark mapping is validated.
+- Do not use proxy or residual-too-high outputs for fabrication or mm-accuracy claims.
 
 ## Smoke Test
 

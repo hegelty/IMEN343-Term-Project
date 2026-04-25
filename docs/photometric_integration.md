@@ -27,8 +27,11 @@
     debug-landmark drawing coordinates to integer tuples before running upstream
   - Keep licensed FLAME assets local under paths allowed by the upstream license
   - Replace coarse staged landmarks/masks with real FAN landmarks and face segmentation masks
-  - Map fitted mesh vertices/FLAME parameters into the existing canonical schema with a validated vertex/region map
-  - Run iris-based or other defensible post-hoc metric calibration before marking Method B `metric_ready=true`
+  - Current Method B semantic points are mesh bounding-box proxies aligned to
+    MediaPipe Iris eye/nose anchors; replace this with a validated FLAME
+    vertex/region map for stronger anatomical claims
+  - Method B is marked `metric_ready=true` only when post-hoc iris calibration
+    passes the residual threshold recorded in `calibration.json`
 
 Submodule command:
 
@@ -59,8 +62,11 @@ and imports:
 - `test_results/{subject_id}.obj` -> `outputs/{subject_id}/photometric/raw_mesh.obj`
 - `test_results/{subject_id}.npy` -> `outputs/{subject_id}/photometric/flame_params.npz`
 
-Until real landmark/segmentation preprocessing and metric calibration are added,
-the common semantic landmarks remain proxy mapped and `metric_ready=false`.
+After upstream fitting, the wrapper imports the mesh/params and attempts
+post-hoc MediaPipe Iris calibration. If `calibration.json` reports
+`status="validated"`, the common handoff is emitted in iris-calibrated mm with
+`metric_ready=true`. If MediaPipe Iris is unavailable or the residual is too
+high, the output remains `metric_ready=false`.
 
 Do not edit upstream files directly unless a small patch is unavoidable. If patches
 are added later, document the upstream commit and each modified file here.

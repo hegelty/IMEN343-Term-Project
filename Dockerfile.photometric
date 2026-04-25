@@ -37,6 +37,7 @@ RUN python -m pip install --upgrade pip \
     && python -m pip install --no-build-isolation chumpy \
     && python -m pip install "numpy<2" "opencv-python<4.13" imageio scikit-image fvcore iopath \
     && python -m pip install pytorch3d -f https://dl.fbaipublicfiles.com/pytorch3d/packaging/wheels/py310_cu118_pyt210/download.html \
-    && python -m pip install -e .
+    && python -m pip install -e ".[mediapipe]" \
+    && python -m pip install "numpy<2" "opencv-python<4.13" "opencv-contrib-python<4.13"
 
 CMD ["python", "-m", "eyewear.cli", "--help"]

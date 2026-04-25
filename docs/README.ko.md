@@ -150,6 +150,13 @@ MediaPipe가 없거나 검출에 실패하면 `backend_status="template_proxy"`,
 `metric_ready=false`로 표시됩니다. 이 경우 결과는 pipeline smoke test용이지
 실측값이 아닙니다.
 
+Method B는 upstream photometric fitting이 성공한 뒤 MediaPipe Iris 기반
+post-hoc calibration을 한 번 더 수행합니다. `calibration.json`에서
+`status="validated"`, `scale_source="iris_posthoc_calibration"`,
+`metric_ready=true`이면 eye/nose anchor residual이 threshold 안에 들어온
+상태입니다. 다만 현재 semantic landmark mapping은 mesh bounding-box proxy라
+temple, forehead, ear/back-of-ear 값은 계속 proxy/estimated로 해석해야 합니다.
+
 ## Method B용 FLAME 파일 받는 법
 
 1. https://flame.is.tue.mpg.de/ 에서 계정을 만듭니다.
@@ -227,7 +234,9 @@ outputs/{subject_id}/comparison/
 - 단일 정면 사진은 측면/머리폭 측정에 약합니다.
 - Method B dense fitting은 upstream 코드와 라이선스가 필요한 FLAME asset을
   설치해야 실제로 동작합니다.
-- proxy 출력은 제작이나 mm 정확도 주장에 사용하면 안 됩니다.
+- Method B의 `metric_ready=true`는 iris-calibrated handoff unit이 mm라는 뜻이지,
+  FLAME vertex별 해부학 landmark mapping이 완전히 검증됐다는 뜻은 아닙니다.
+- proxy 또는 residual-too-high 출력은 제작이나 mm 정확도 주장에 사용하면 안 됩니다.
 
 ## Smoke Test
 
