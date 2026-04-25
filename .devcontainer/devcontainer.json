@@ -9,6 +9,9 @@
   },
   "workspaceFolder": "/workspace",
   "postCreateCommand": "python -m pip install -e '.[dev]'",
+  "remoteEnv": {
+    "EYEWEAR_NOTE": "Base devcontainer is lightweight. Use Dockerfile.photometric for PyTorch3D/CUDA Method B fitting."
+  },
   "customizations": {
     "vscode": {
       "extensions": [

@@ -1,4 +1,12 @@
-# Optional and potentially fragile stack for third_party/photometric_optimization integration
+# Optional and fragile stack for third_party/photometric_optimization integration.
+# Upstream README reports testing with Python 3.8.3, PyTorch 1.5, CUDA 10.2,
+# and PyTorch3D 0.2. Modern CPU smoke environments can install these broader
+# packages, but real fitting should use the Dockerfile.photometric/conda path.
 numpy>=1.24
-torch>=2.1
 opencv-python>=4.8
+imageio>=2.31
+scikit-image>=0.21
+torch>=2.1
+torchvision>=0.16
+# Install PyTorch3D separately for your CUDA/PyTorch combination:
+#   conda install pytorch3d -c pytorch3d

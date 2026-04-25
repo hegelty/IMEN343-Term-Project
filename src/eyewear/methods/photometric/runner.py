@@ -10,6 +10,13 @@ from eyewear.common.measurements.compute import compute_measurements
 from eyewear.common.schema.models import CanonicalFace
 from eyewear.common.schema.validation import validate_required_fields
 from eyewear.methods.template import template_landmarks
+from eyewear.methods.photometric.upstream import (
+    UPSTREAM_HEAD,
+    UPSTREAM_REPO,
+    copy_upstream_outputs,
+    inspect_upstream,
+    run_upstream_fitting,
+)
 
 
 def _curve_template() -> dict:
@@ -20,46 +27,42 @@ def _curve_template() -> dict:
     }
 
 
-def _photometric_backend_status() -> tuple[str, list[str]]:
-    repo_root = Path(__file__).resolve().parents[4]
-    upstream_dir = repo_root / "third_party" / "photometric_optimization"
-    if not upstream_dir.exists():
-        return "not_present", ["third_party/photometric_optimization is missing; using proxy mesh output only."]
-
-    non_readme_files = [
-        p for p in upstream_dir.rglob("*")
-        if p.is_file() and p.name.lower() not in {"readme.md", "upstream.md"}
-    ]
-    if not non_readme_files:
-        return "not_vendored_placeholder", [
-            "HavenFeng/photometric_optimization is documented but not vendored or submodule-linked yet.",
-            "raw_mesh.obj and flame_params.npz are proxy artifacts until the upstream backend/assets are installed.",
-        ]
-    return "vendored_or_submodule_present", ["Upstream photometric directory contains files; wrapper still requires environment-specific backend wiring."]
-
-
 def _refresh_estimated_fields(face: CanonicalFace) -> None:
     face.estimated_fields = [k for k, v in face.landmarks.items() if v.source == "estimated"]
     face.estimated_fields.extend(k for k, v in face.measurements.items() if v.status == "estimated")
 
 
-def run_photometric(subject_id: str, input_path: str, output_root: Path, input_mode: str = "single_image") -> dict:
+def run_photometric(
+    subject_id: str,
+    input_path: str,
+    output_root: Path,
+    input_mode: str = "single_image",
+    device: str = "cpu",
+    timeout_sec: int = 1800,
+    run_upstream: bool = True,
+) -> dict:
     t0 = time.time()
     input_info = inspect_input_path(input_path, input_mode, allowed_modes={"single_image", "photo_set"})
-    backend_status, backend_notes = _photometric_backend_status()
+    upstream_check = inspect_upstream()
+    upstream_result = run_upstream_fitting(input_info, subject_id, device=device, timeout_sec=timeout_sec) if run_upstream else None
+    backend_status = upstream_result.status if upstream_result is not None else upstream_check.status
+    backend_notes = upstream_result.notes if upstream_result is not None else upstream_check.notes
+    backend_ran = bool(upstream_result and upstream_result.success)
 
     face = CanonicalFace(
         subject_id=subject_id,
         method_name="photometric_optimization",
-        landmarks=template_landmarks("mesh_fit_proxy"),
-        scale_source="iris_posthoc_calibration_template_proxy",
+        landmarks=template_landmarks("mesh_fit_semantic_proxy" if backend_ran else "mesh_fit_proxy"),
+        scale_source="iris_posthoc_calibration_pending" if backend_ran else "iris_posthoc_calibration_template_proxy",
         metric_ready=False,
         backend_name="HavenFeng/photometric_optimization",
         backend_status=backend_status,
         quality_notes=[
             *backend_notes,
             *input_info.notes,
+            f"Upstream target: {UPSTREAM_REPO}@{UPSTREAM_HEAD[:7]}.",
             "Dense RGB fitting has inherent absolute-scale ambiguity; post-hoc iris calibration is required before using subject-specific mm claims.",
+            "Common semantic landmarks remain proxy-mapped until a validated FLAME vertex/region map is added.",
         ],
     )
     face.curves = _curve_template()
@@ -80,17 +83,33 @@ def run_photometric(subject_id: str, input_path: str, output_root: Path, input_m
         user_input_burden=input_info.user_input_burden,
         missing_fields=missing_fields,
     )
-    write_raw_mesh_obj(out_dir / "raw_mesh.obj")
-    write_flame_params(out_dir / "flame_params.npz")
+    imported = copy_upstream_outputs(upstream_result, out_dir) if upstream_result is not None else {}
+    if not imported:
+        write_raw_mesh_obj(out_dir / "raw_mesh.obj")
+        write_flame_params(out_dir / "flame_params.npz")
     write_json(
         out_dir / "calibration.json",
         {
             "scale_source": face.scale_source,
-            "status": "approximate",
+            "status": "pending" if backend_ran else "approximate_template_proxy",
             "backend_status": backend_status,
             "metric_ready": face.metric_ready,
             "assumed_iris_diameter_mm": 11.7,
-            "notes": "Absolute scale may vary; iris-based post-hoc calibration is the intended strategy. Current proxy output is not a validated dense fit.",
+            "upstream_repository": UPSTREAM_REPO,
+            "upstream_expected_commit": UPSTREAM_HEAD,
+            "upstream_detected_commit": upstream_check.commit,
+            "missing_upstream_files": upstream_check.missing_files,
+            "missing_manual_assets": upstream_check.missing_assets,
+            "prepared_input": {
+                "image_name": upstream_result.prepared_input.image_name,
+                "image_path": str(upstream_result.prepared_input.image_path),
+                "landmark_path": str(upstream_result.prepared_input.landmark_path),
+                "mask_path": str(upstream_result.prepared_input.mask_path),
+            } if upstream_result and upstream_result.prepared_input else None,
+            "imported_outputs": imported,
+            "stdout_tail": upstream_result.stdout_tail if upstream_result else "",
+            "stderr_tail": upstream_result.stderr_tail if upstream_result else "",
+            "notes": "Absolute scale may vary; iris-based post-hoc calibration is the intended strategy. metric_ready remains false until dense mesh scale is validated.",
         },
     )
 
@@ -99,6 +118,7 @@ def run_photometric(subject_id: str, input_path: str, output_root: Path, input_m
         "output_dir": str(out_dir),
         "missing_fields": missing_fields,
         "backend_status": backend_status,
+        "upstream_ran": backend_ran,
         "runtime_sec": round(time.time() - t0, 3),
         "success": len(missing_fields) == 0,
     }

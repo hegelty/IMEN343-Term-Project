@@ -19,6 +19,9 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--subject-id", required=True)
     run.add_argument("--output-root", default="outputs")
     run.add_argument("--input-mode", default="single_image", choices=["single_image", "photo_set", "video"])
+    run.add_argument("--photometric-device", default="cpu", choices=["cpu", "cuda"], help="Device passed to HavenFeng photometric_optimization when Method B is runnable.")
+    run.add_argument("--photometric-timeout-sec", type=int, default=1800, help="Timeout for Method B upstream fitting.")
+    run.add_argument("--skip-photometric-upstream", action="store_true", help="Generate Method B handoff/proxy outputs without invoking the upstream fitter.")
 
     comp = sub.add_parser("compare")
     comp.add_argument("--subject-id", required=True)
@@ -37,7 +40,15 @@ def main() -> None:
         if args.method == "mediapipe":
             result = run_mediapipe(args.subject_id, args.input, out_root, input_mode=args.input_mode)
         else:
-            result = run_photometric(args.subject_id, args.input, out_root, input_mode=args.input_mode)
+            result = run_photometric(
+                args.subject_id,
+                args.input,
+                out_root,
+                input_mode=args.input_mode,
+                device=args.photometric_device,
+                timeout_sec=args.photometric_timeout_sec,
+                run_upstream=not args.skip_photometric_upstream,
+            )
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return
 

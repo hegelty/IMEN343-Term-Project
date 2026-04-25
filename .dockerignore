@@ -9,3 +9,6 @@ dist
 outputs/*
 !outputs/.gitkeep
 data
+third_party/photometric_optimization/FFHQ/*
+third_party/photometric_optimization/FFHQ_seg/*
+third_party/photometric_optimization/test_results/*

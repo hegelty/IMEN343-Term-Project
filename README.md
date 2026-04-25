@@ -79,8 +79,9 @@ Optional photometric dependency stack:
 python -m pip install -r requirements-photometric.txt
 ```
 
-The photometric backend also needs upstream code, FLAME assets, and compatible
-PyTorch/CUDA setup before it should be treated as subject-specific dense fitting.
+The photometric backend is PyTorch/PyTorch3D-based, not TensorFlow. It also
+needs upstream code, FLAME assets, and compatible PyTorch/CUDA setup before it
+should be treated as subject-specific dense fitting.
 
 ## Docker / Dev Container
 
@@ -97,6 +98,14 @@ Build with optional photometric Python dependencies:
 docker build --build-arg INSTALL_PHOTOMETRIC=true -t imenhfe-eyewear:photometric .
 ```
 
+For real Method B fitting, prefer the separate Linux/CUDA-oriented Dockerfile:
+
+```bash
+docker build -f Dockerfile.photometric -t imenhfe-eyewear:method-b .
+docker run --gpus all --rm -v "$PWD:/workspace" imenhfe-eyewear:method-b \
+  python -m eyewear.cli run photometric --input data/front.jpg --subject-id s01 --photometric-device cuda
+```
+
 VS Code users can reopen the repository in the included `.devcontainer/`.
 
 ## CLI
@@ -106,12 +115,18 @@ python -m eyewear.cli run mediapipe --input data/front.jpg --subject-id s01 --in
 python -m eyewear.cli run mediapipe --input data/s01_photos --subject-id s01 --input-mode photo_set
 python -m eyewear.cli run mediapipe --input data/face.mp4 --subject-id s01 --input-mode video
 python -m eyewear.cli run photometric --input data/front.jpg --subject-id s01 --input-mode single_image
+python -m eyewear.cli run photometric --input data/front.jpg --subject-id s01 --photometric-device cuda --photometric-timeout-sec 3600
+python -m eyewear.cli run photometric --input data/front.jpg --subject-id s01 --skip-photometric-upstream
 python -m eyewear.cli compare --subject-id s01
 python -m eyewear.cli evaluate --subject-id s01
 ```
 
 Method B currently supports `single_image` and `photo_set`; video fitting is not
-claimed.
+claimed. If `third_party/photometric_optimization` has the upstream code and
+manual FLAME assets, the wrapper stages the image/landmarks/mask, runs
+`photometric_fitting.py`, and imports the resulting OBJ/NPY files. Otherwise it
+emits clearly labeled proxy outputs so the shared handoff/comparison pipeline can
+still be tested.
 
 ## Outputs
 
@@ -212,8 +227,9 @@ tradeoff evidence, not validated anatomical accuracy.
 - Single portrait input is weak for side/head-breadth measurements.
 - MediaPipe output is metric only when iris scaling succeeds; otherwise the CLI
   labels the result as a template proxy.
-- Method B is a wrapper/proxy until HavenFeng upstream code, FLAME assets, and
-  post-hoc metric calibration are installed and wired.
+- Method B can invoke HavenFeng upstream when code/assets are present, but its
+  current staged landmarks/masks are coarse proxies and dense mesh metric scale
+  is still marked unverified.
 - Do not use proxy outputs for fabrication or mm-accuracy claims.
 
 ## Smoke Test

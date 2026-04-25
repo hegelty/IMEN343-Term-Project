@@ -1,0 +1,47 @@
+# Linux/CUDA-oriented environment for HavenFeng/photometric_optimization.
+#
+# This is intentionally separate from the lightweight project Dockerfile because
+# Method B depends on PyTorch3D and licensed FLAME assets. It is not TensorFlow.
+# The upstream README was tested with Python 3.8, PyTorch 1.5, CUDA 10.2, and
+# PyTorch3D 0.2; this file preserves that conda-based direction.
+
+FROM nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /workspace
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
+        libglib2.0-0 \
+        libgl1-mesa-glx \
+        libsm6 \
+        libxext6 \
+        libxrender1 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://repo.anaconda.com/miniconda/Miniconda3-py38_23.11.0-2-Linux-x86_64.sh -o /tmp/miniconda.sh \
+    && bash /tmp/miniconda.sh -b -p /opt/conda \
+    && rm /tmp/miniconda.sh
+
+ENV PATH=/opt/conda/bin:$PATH
+
+RUN conda install -y -c pytorch pytorch=1.5.0 torchvision cudatoolkit=10.2 \
+    && conda install -y -c conda-forge -c fvcore fvcore \
+    && conda install -y -c pytorch3d pytorch3d=0.2.5 \
+    && conda clean -afy
+
+COPY pyproject.toml README.md requirements.txt requirements-photometric.txt ./
+COPY src ./src
+
+RUN python -m pip install --upgrade pip \
+    && python -m pip install -r requirements.txt \
+    && python -m pip install opencv-python imageio scikit-image \
+    && python -m pip install -e .
+
+CMD ["python", "-m", "eyewear.cli", "--help"]

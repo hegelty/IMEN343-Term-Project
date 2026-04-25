@@ -38,6 +38,10 @@ def test_cli_e2e_generates_required_outputs(tmp_path: Path):
     assert "per_run" in summary
     assert summary["per_run"]["photometric"]["backend_status"] == "not_vendored_placeholder"
 
+    calibration = json.loads((tmp_path / "t01" / "photometric" / "calibration.json").read_text(encoding="utf-8"))
+    assert calibration["upstream_expected_commit"].startswith("83f84b8")
+    assert calibration["metric_ready"] is False
+
 
 def test_cli_photo_set_records_image_count(tmp_path: Path):
     repo = Path(__file__).resolve().parents[1]
