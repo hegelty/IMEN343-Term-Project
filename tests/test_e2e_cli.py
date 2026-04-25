@@ -36,7 +36,12 @@ def test_cli_e2e_generates_required_outputs(tmp_path: Path):
     summary = json.loads((tmp_path / "t01" / "comparison" / "comparison_summary.json").read_text(encoding="utf-8"))
     assert summary["subject_id"] == "t01"
     assert "per_run" in summary
-    assert summary["per_run"]["photometric"]["backend_status"] == "not_vendored_placeholder"
+    assert summary["per_run"]["photometric"]["backend_status"] in {
+        "not_vendored_placeholder",
+        "setup_blocked_missing_assets",
+        "upstream_failed",
+        "upstream_success_scale_unverified",
+    }
 
     calibration = json.loads((tmp_path / "t01" / "photometric" / "calibration.json").read_text(encoding="utf-8"))
     assert calibration["upstream_expected_commit"].startswith("83f84b8")

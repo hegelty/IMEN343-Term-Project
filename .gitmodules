@@ -1,0 +1,4 @@
+[submodule "third_party/photometric_optimization"]
+	path = third_party/photometric_optimization
+	url = https://github.com/HavenFeng/photometric_optimization
+	ignore = dirty

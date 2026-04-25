@@ -66,6 +66,11 @@ Method B는 TensorFlow가 아니라 PyTorch/PyTorch3D 기반입니다. 실제 de
 fitting에는 upstream 코드, FLAME asset, 호환되는 CUDA/PyTorch3D 환경이
 필요합니다.
 
+`third_party/photometric_optimization`은 HavenFeng upstream을 Git submodule로
+연결합니다. upstream 코드는 MIT License라서 학교 과제 저장소에 submodule
+포인터로 포함해도 큰 문제는 없지만, FLAME model/texture 파일은 별도
+라이선스이므로 GitHub에 올리지 않습니다.
+
 ## Docker
 
 기본 이미지 빌드:
@@ -156,10 +161,9 @@ third_party/photometric_optimization/data/generic_model.pkl
 third_party/photometric_optimization/data/FLAME_texture.npz
 ```
 
-4. upstream 코드가 없다면 추가합니다.
+4. submodule 코드를 가져옵니다.
 
 ```bash
-git submodule add https://github.com/HavenFeng/photometric_optimization third_party/photometric_optimization
 git submodule update --init --recursive
 ```
 

@@ -65,6 +65,11 @@ python -m pip install -r requirements-photometric.txt
 Method B is PyTorch/PyTorch3D-based, not TensorFlow. Real dense fitting also
 requires upstream code, FLAME assets, and a compatible CUDA/PyTorch3D setup.
 
+`third_party/photometric_optimization` is connected as a Git submodule pointing
+to HavenFeng's upstream repository. The upstream code is MIT licensed, so keeping
+it as a submodule pointer is acceptable for this school project. FLAME model and
+texture assets are separately licensed and must not be committed.
+
 ## Docker
 
 Build the base image:
@@ -155,10 +160,9 @@ third_party/photometric_optimization/data/generic_model.pkl
 third_party/photometric_optimization/data/FLAME_texture.npz
 ```
 
-4. Add upstream code if it is not present yet:
+4. Fetch the submodule code:
 
 ```bash
-git submodule add https://github.com/HavenFeng/photometric_optimization third_party/photometric_optimization
 git submodule update --init --recursive
 ```
 
