@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eyewear"
+version = "0.1.0"
+description = "RGB-only face modeling handoff prototype for custom-fit eyewear"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "Pillow>=10.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+mediapipe = ["mediapipe>=0.10.14"]
+photometric = ["torch>=2.1", "opencv-python>=4.8"]
+
+[project.scripts]
+eyewear = "eyewear.cli.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

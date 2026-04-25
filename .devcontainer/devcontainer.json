@@ -1,0 +1,20 @@
+{
+  "name": "IMEN343 Eyewear Prototype",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": "..",
+    "args": {
+      "INSTALL_PHOTOMETRIC": "false"
+    }
+  },
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": "python -m pip install -e '.[dev]'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  }
+}

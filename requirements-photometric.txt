@@ -1,0 +1,4 @@
+# Optional and potentially fragile stack for third_party/photometric_optimization integration
+numpy>=1.24
+torch>=2.1
+opencv-python>=4.8
