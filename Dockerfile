@@ -1,6 +1,7 @@
 FROM python:3.11-slim
 
 ARG INSTALL_PHOTOMETRIC=false
+ARG INSTALL_MEDIAPIPE=true
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -21,6 +22,6 @@ COPY src ./src
 RUN python -m pip install --upgrade pip \
     && python -m pip install -r requirements.txt \
     && if [ "$INSTALL_PHOTOMETRIC" = "true" ]; then python -m pip install -r requirements-photometric.txt; fi \
-    && python -m pip install -e .
+    && if [ "$INSTALL_MEDIAPIPE" = "true" ]; then python -m pip install -e ".[mediapipe]"; else python -m pip install -e .; fi
 
 CMD ["python", "-m", "eyewear.cli", "--help"]

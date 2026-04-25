@@ -55,3 +55,28 @@ def test_cli_photo_set_records_image_count(tmp_path: Path):
     metadata = json.loads((tmp_path / "t02" / "mediapipe" / "metadata.json").read_text(encoding="utf-8"))
     assert metadata["capture"]["image_count"] == 3
     assert metadata["capture"]["user_input_burden"] == "multi-view photo set (3 images)"
+
+
+def test_cli_pipeline_runs_both_methods_and_compare(tmp_path: Path):
+    repo = Path(__file__).resolve().parents[1]
+    input_img = tmp_path / "face.jpg"
+    Image.new("RGB", (64, 64), (200, 200, 200)).save(input_img)
+
+    stdout = _run([
+        sys.executable,
+        "-m",
+        "eyewear.cli",
+        "pipeline",
+        "--input",
+        str(input_img),
+        "--subject-id",
+        "t03",
+        "--output-root",
+        str(tmp_path),
+    ], repo)
+
+    payload = json.loads(stdout)
+    assert payload["subject_id"] == "t03"
+    assert (tmp_path / "t03" / "mediapipe" / "metadata.json").exists()
+    assert (tmp_path / "t03" / "photometric" / "metadata.json").exists()
+    assert (tmp_path / "t03" / "comparison" / "comparison_summary.json").exists()

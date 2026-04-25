@@ -92,6 +92,20 @@ docker build -t imenhfe-eyewear .
 docker run --rm imenhfe-eyewear
 ```
 
+Run an always-on development container:
+
+```bash
+docker run -d --name imenhfe-eyewear-dev -v "$PWD:/workspace" -w /workspace imenhfe-eyewear sleep infinity
+docker exec -it imenhfe-eyewear-dev bash
+```
+
+Windows PowerShell:
+
+```powershell
+docker run -d --name imenhfe-eyewear-dev -v "${PWD}:/workspace" -w /workspace imenhfe-eyewear sleep infinity
+docker exec -it imenhfe-eyewear-dev bash
+```
+
 Build with optional photometric Python dependencies:
 
 ```bash
@@ -110,6 +124,18 @@ VS Code users can reopen the repository in the included `.devcontainer/`.
 
 ## CLI
 
+One-command full pipeline:
+
+```bash
+python -m eyewear.cli pipeline --input data/sample_me.jpg --subject-id sample_me
+```
+
+Docker one-command full pipeline:
+
+```bash
+docker exec imenhfe-eyewear-dev python -m eyewear.cli pipeline --input data/sample_me.jpg --subject-id sample_me
+```
+
 ```bash
 python -m eyewear.cli run mediapipe --input data/front.jpg --subject-id s01 --input-mode single_image
 python -m eyewear.cli run mediapipe --input data/s01_photos --subject-id s01 --input-mode photo_set
@@ -127,6 +153,84 @@ manual FLAME assets, the wrapper stages the image/landmarks/mask, runs
 `photometric_fitting.py`, and imports the resulting OBJ/NPY files. Otherwise it
 emits clearly labeled proxy outputs so the shared handoff/comparison pipeline can
 still be tested.
+
+## Method A Iris Scaling / Method A 홍채 기반 스케일링
+
+English: Method A tries to use MediaPipe refined Face Mesh/Iris landmarks when
+the `mediapipe` package is installed. If face/iris detection succeeds,
+`metadata.json` reports `backend_status="mediapipe_face_mesh_refine_landmarks"`
+and `scale_source="iris_depth"`. If MediaPipe is missing or detection fails, the
+pipeline emits `backend_status="template_proxy"` and `metric_ready=false`; that
+output is only a smoke-test handoff, not a real face measurement.
+
+한국어: Method A는 `mediapipe` 패키지가 설치되어 있고 얼굴/홍채 검출이
+성공하면 MediaPipe refined Face Mesh/Iris landmark를 사용합니다. 성공 시
+`metadata.json`에 `backend_status="mediapipe_face_mesh_refine_landmarks"`,
+`scale_source="iris_depth"`가 기록됩니다. MediaPipe가 없거나 검출 실패 시에는
+`backend_status="template_proxy"`, `metric_ready=false`로 표시되며, 이 결과는
+실측값이 아니라 파이프라인 확인용입니다.
+
+## FLAME Assets For Method B / Method B용 FLAME 파일 받는 법
+
+English:
+
+1. Create an account at the FLAME project site: https://flame.is.tue.mpg.de/
+2. Request/download the FLAME model after accepting the license.
+3. Download the FLAME texture space if available for your license/project.
+4. Place the files here:
+
+```text
+third_party/photometric_optimization/data/generic_model.pkl
+third_party/photometric_optimization/data/FLAME_texture.npz
+```
+
+5. Add the upstream code if it is not present yet:
+
+```bash
+git submodule add https://github.com/HavenFeng/photometric_optimization third_party/photometric_optimization
+git submodule update --init --recursive
+```
+
+6. Use the Method B Docker image for real fitting:
+
+```bash
+docker build -f Dockerfile.photometric -t imenhfe-eyewear:method-b .
+docker run --gpus all --rm -v "$PWD:/workspace" -w /workspace imenhfe-eyewear:method-b \
+  python -m eyewear.cli run photometric --input data/sample_me.jpg --subject-id sample_me --photometric-device cuda
+```
+
+한국어:
+
+1. FLAME 사이트에서 계정을 만듭니다: https://flame.is.tue.mpg.de/
+2. 라이선스에 동의한 뒤 FLAME model 파일을 다운로드합니다.
+3. 프로젝트/라이선스에서 허용되는 경우 FLAME texture space도 다운로드합니다.
+4. 파일을 아래 위치에 둡니다.
+
+```text
+third_party/photometric_optimization/data/generic_model.pkl
+third_party/photometric_optimization/data/FLAME_texture.npz
+```
+
+5. upstream 코드가 아직 없다면 추가합니다.
+
+```bash
+git submodule add https://github.com/HavenFeng/photometric_optimization third_party/photometric_optimization
+git submodule update --init --recursive
+```
+
+6. 실제 Method B fitting은 PyTorch/PyTorch3D/CUDA 환경이 필요하므로 전용 Docker를
+사용하는 편이 안전합니다. TensorFlow Docker가 아니라 Linux + CUDA + PyTorch3D
+환경입니다.
+
+```bash
+docker build -f Dockerfile.photometric -t imenhfe-eyewear:method-b .
+docker run --gpus all --rm -v "$PWD:/workspace" -w /workspace imenhfe-eyewear:method-b \
+  python -m eyewear.cli run photometric --input data/sample_me.jpg --subject-id sample_me --photometric-device cuda
+```
+
+Until these assets are present, Method B still writes the common handoff package
+but marks the backend as blocked or proxy-level. Do not use proxy-level Method B
+outputs as real mm-accurate geometry.
 
 ## Outputs
 

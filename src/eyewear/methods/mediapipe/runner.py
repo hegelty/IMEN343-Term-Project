@@ -72,17 +72,20 @@ def _try_mediapipe_face_mesh(input_info: InputInfo) -> tuple[dict[str, LandmarkP
     except Exception as exc:  # pragma: no cover - optional dependency path
         return None
 
-    image = Image.open(image_path).convert("RGB")
-    width, height = image.size
-    rgb = np.asarray(image)
+    try:
+        image = Image.open(image_path).convert("RGB")
+        width, height = image.size
+        rgb = np.asarray(image)
 
-    with mp.solutions.face_mesh.FaceMesh(
-        static_image_mode=True,
-        refine_landmarks=True,
-        max_num_faces=1,
-        min_detection_confidence=0.5,
-    ) as face_mesh:
-        result = face_mesh.process(rgb)
+        with mp.solutions.face_mesh.FaceMesh(
+            static_image_mode=True,
+            refine_landmarks=True,
+            max_num_faces=1,
+            min_detection_confidence=0.5,
+        ) as face_mesh:
+            result = face_mesh.process(rgb)
+    except Exception:
+        return None
 
     if not result.multi_face_landmarks:
         return None
