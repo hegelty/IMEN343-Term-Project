@@ -139,21 +139,34 @@ MediaPipe가 없거나 검출에 실패하면 `backend_status="template_proxy"`,
 ## Method B용 FLAME 파일 받는 법
 
 1. https://flame.is.tue.mpg.de/ 에서 계정을 만듭니다.
-2. 라이선스에 동의한 뒤 FLAME model을 요청/다운로드합니다.
-3. 프로젝트/라이선스에서 허용되면 FLAME texture space도 다운로드합니다.
-4. 파일을 아래 위치에 둡니다.
+2. 라이선스에 동의한 뒤 아래 항목을 다운로드합니다.
+
+| 다운로드 항목 | 필수 여부 | 용도 | 저장 위치 |
+| --- | --- | --- | --- |
+| `FLAME 2023 Open` | 필수 | 얼굴 geometry model. 압축 안의 `.pkl` 파일을 사용합니다. | `third_party/photometric_optimization/data/generic_model.pkl` |
+| `FLAME texture space (for non-commercial use only)` | photometric 원본 실행 시 필수 | HavenFeng photometric fitting의 `FLAMETex` 초기화에 필요한 texture space입니다. 보통 압축 안에 `.npz` 파일이 있습니다. | `third_party/photometric_optimization/data/FLAME_texture.npz` |
+| `FLAME Mediapipe Landmark Embedding` | 선택 | MediaPipe landmark와 FLAME landmark/vertex mapping 실험에 도움됩니다. 현재 wrapper의 필수 파일은 아닙니다. | 필요 시 `third_party/photometric_optimization/data/` |
+| `FLAME Vertex Masks` | 선택 | 얼굴 영역별 vertex mask입니다. 후속 semantic region mapping에 도움됩니다. | 필요 시 `third_party/photometric_optimization/data/` |
+| `FLAME Blender Add-on`, `FLAME 2020/2019/2017` | 불필요 | 이 프로젝트의 현재 wrapper에는 필요하지 않습니다. | 받지 않아도 됩니다. |
+
+3. 파일명을 아래처럼 맞춥니다. 압축 안의 이름이 다르면 파일명을 바꿔도 됩니다.
 
 ```text
 third_party/photometric_optimization/data/generic_model.pkl
 third_party/photometric_optimization/data/FLAME_texture.npz
 ```
 
-5. upstream 코드가 없다면 추가합니다.
+4. upstream 코드가 없다면 추가합니다.
 
 ```bash
 git submodule add https://github.com/HavenFeng/photometric_optimization third_party/photometric_optimization
 git submodule update --init --recursive
 ```
+
+주의: FLAME model/texture 파일은 라이선스 파일이므로 GitHub에 올리지 않습니다.
+`.gitignore`가 `third_party/photometric_optimization/data/*.pkl`,
+`third_party/photometric_optimization/data/*.npz`를 제외하도록 설정되어
+있습니다.
 
 이 asset들이 없으면 Method B는 공통 handoff package는 만들지만 backend를
 blocked/proxy 상태로 표시합니다. proxy-level Method B 결과를 실제 mm 정확도나

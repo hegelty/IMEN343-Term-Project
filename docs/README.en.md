@@ -137,21 +137,34 @@ for smoke testing, not real measurement.
 ## FLAME Assets For Method B
 
 1. Create an account at https://flame.is.tue.mpg.de/.
-2. Request/download the FLAME model after accepting the license.
-3. Download the FLAME texture space if your license/project allows it.
-4. Place the files here:
+2. Accept the license and download the items below.
+
+| Download item | Required? | Purpose | Local path |
+| --- | --- | --- | --- |
+| `FLAME 2023 Open` | Required | Face geometry model. Use the `.pkl` file inside the archive. | `third_party/photometric_optimization/data/generic_model.pkl` |
+| `FLAME texture space (for non-commercial use only)` | Required for the original photometric fitter | Texture space used by HavenFeng's `FLAMETex`. The archive usually contains an `.npz` file. | `third_party/photometric_optimization/data/FLAME_texture.npz` |
+| `FLAME Mediapipe Landmark Embedding` | Optional | Useful for MediaPipe-to-FLAME landmark/vertex mapping experiments. Not required by the current wrapper. | `third_party/photometric_optimization/data/` if needed |
+| `FLAME Vertex Masks` | Optional | Useful for future semantic region mapping. | `third_party/photometric_optimization/data/` if needed |
+| `FLAME Blender Add-on`, `FLAME 2020/2019/2017` | Not needed | Not used by the current wrapper. | You can skip these. |
+
+3. Rename/place the files like this. Renaming is fine if the archive uses a
+different filename.
 
 ```text
 third_party/photometric_optimization/data/generic_model.pkl
 third_party/photometric_optimization/data/FLAME_texture.npz
 ```
 
-5. Add upstream code if it is not present yet:
+4. Add upstream code if it is not present yet:
 
 ```bash
 git submodule add https://github.com/HavenFeng/photometric_optimization third_party/photometric_optimization
 git submodule update --init --recursive
 ```
+
+Do not commit FLAME model/texture files. They are licensed assets. `.gitignore`
+excludes `third_party/photometric_optimization/data/*.pkl` and
+`third_party/photometric_optimization/data/*.npz`.
 
 Until these assets are present, Method B still writes the common handoff package
 but marks the backend as blocked or proxy-level. Do not use proxy-level Method B

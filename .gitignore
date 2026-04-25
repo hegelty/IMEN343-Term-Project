@@ -6,6 +6,21 @@ build/
 dist/
 *.egg-info/
 .env
-data/
-outputs/*
-!outputs/.gitkeep
+/data/
+/outputs/*
+!/outputs/.gitkeep
+
+# Licensed or large third-party assets. Download locally; do not commit.
+third_party/photometric_optimization/data/generic_model.pkl
+third_party/photometric_optimization/data/FLAME_texture.npz
+third_party/photometric_optimization/data/*.pkl
+third_party/photometric_optimization/data/*.npz
+third_party/photometric_optimization/**/*.pkl
+third_party/photometric_optimization/**/*.npz
+third_party/photometric_optimization/FFHQ/*
+third_party/photometric_optimization/FFHQ_seg/*
+third_party/photometric_optimization/test_results/*
+third_party/photometric_optimization/**/*.obj
+third_party/photometric_optimization/**/*.mtl
+third_party/photometric_optimization/**/*.png
+third_party/photometric_optimization/**/*.jpg
